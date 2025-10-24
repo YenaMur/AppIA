@@ -1,7 +1,11 @@
+import 'package:app/presentacion/screens/historial_financiero_screen.dart';
 import 'package:app/presentacion/screens/scan_alert_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:app/core/constants/app_colors.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import '../../core/constants/app_texts.dart';
 import '../../core/utils/nav_helper.dart';
@@ -84,22 +88,63 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
+                    children: [
+                      const Text(
                         AppTexts.balanceTitle,
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 14,
                         ),
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        "\$50,000.00",
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      const SizedBox(height: 4),
+
+                      // === Saldo dinámico desde Firestore ===
+                      StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('facturas')
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Text(
+                              "\$0.00",
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            );
+                          }
+
+                          double totalIngresos = 0;
+                          double totalGastos = 0;
+
+                          if (snapshot.hasData &&
+                              snapshot.data!.docs.isNotEmpty) {
+                            for (var doc in snapshot.data!.docs) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              final monto = (data['monto'] ?? 0).toDouble();
+                              if (monto < 0) {
+                                totalGastos += monto.abs();
+                              } else {
+                                totalIngresos += monto;
+                              }
+                            }
+                          }
+
+                          // Calcular saldo y evitar negativos
+                          final saldo = totalIngresos - totalGastos;
+                          final saldoSeguro = saldo < 0 ? 0 : saldo;
+
+                          return Text(
+                            "\$${saldoSeguro.toStringAsFixed(2)}",
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -145,75 +190,128 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // ===== GRÁFICA DE BARRAS =====
               SizedBox(
-                height: 180,
-                child: BarChart(
-                  BarChartData(
-                    alignment: BarChartAlignment.spaceAround,
-                    titlesData: FlTitlesData(
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            const labels = [
-                              'Transporte',
-                              'Alimentación',
-                              'Salidas',
-                              'Estudios',
-                            ];
-                            return Text(
-                              labels[value.toInt() % labels.length],
-                              style: const TextStyle(fontSize: 10),
-                            );
-                          },
+                height: 220,
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('facturas')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          "Aún no hay datos para mostrar",
+                          style: TextStyle(
+                            color: AppColors.textHint,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                      leftTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                    ),
-                    gridData: const FlGridData(show: false),
-                    borderData: FlBorderData(show: false),
-                    barGroups: [
-                      BarChartGroupData(
-                        x: 0,
+                      );
+                    }
+
+                    // === Agrupamos por categoría ===
+                    Map<String, double> ingresosPorCategoria = {};
+                    Map<String, double> gastosPorCategoria = {};
+
+                    for (var doc in snapshot.data!.docs) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final categoria = data['categoria'] ?? 'General';
+                      final monto = (data['monto'] ?? 0).toDouble();
+
+                      if (monto >= 0) {
+                        ingresosPorCategoria[categoria] =
+                            (ingresosPorCategoria[categoria] ?? 0) + monto;
+                      } else {
+                        gastosPorCategoria[categoria] =
+                            (gastosPorCategoria[categoria] ?? 0) + monto.abs();
+                      }
+                    }
+
+                    // === Todas las categorías únicas ===
+                    final categorias = {
+                      ...ingresosPorCategoria.keys,
+                      ...gastosPorCategoria.keys,
+                    }.toList();
+
+                    if (categorias.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          "Sin categorías registradas",
+                          style: TextStyle(
+                            color: AppColors.textHint,
+                            fontSize: 12,
+                          ),
+                        ),
+                      );
+                    }
+
+                    // === Generar grupos de barras dinámicamente ===
+                    final barGroups = List.generate(categorias.length, (index) {
+                      final categoria = categorias[index];
+                      final ingreso = ingresosPorCategoria[categoria] ?? 0;
+                      final gasto = gastosPorCategoria[categoria] ?? 0;
+
+                      return BarChartGroupData(
+                        x: index,
+                        barsSpace: 4,
                         barRods: [
-                          BarChartRodData(toY: 50, color: Colors.blue),
-                          BarChartRodData(toY: 40, color: Colors.purple),
-                          BarChartRodData(toY: 60, color: Colors.cyan),
+                          BarChartRodData(
+                            toY: ingreso,
+                            color: Colors.blue,
+                            width: 10,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          BarChartRodData(
+                            toY: gasto,
+                            color: Colors.redAccent,
+                            width: 10,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ],
+                      );
+                    });
+
+                    // === Mostrar gráfica ===
+                    return BarChart(
+                      BarChartData(
+                        alignment: BarChartAlignment.spaceAround,
+                        gridData: const FlGridData(show: false),
+                        borderData: FlBorderData(show: false),
+                        titlesData: FlTitlesData(
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                final index = value.toInt();
+                                if (index < 0 || index >= categorias.length)
+                                  return const SizedBox();
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    categorias[index],
+                                    style: const TextStyle(fontSize: 10),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          leftTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                        ),
+                        barGroups: barGroups,
                       ),
-                      BarChartGroupData(
-                        x: 1,
-                        barRods: [
-                          BarChartRodData(toY: 30, color: Colors.blue),
-                          BarChartRodData(toY: 50, color: Colors.purple),
-                          BarChartRodData(toY: 35, color: Colors.cyan),
-                        ],
-                      ),
-                      BarChartGroupData(
-                        x: 2,
-                        barRods: [
-                          BarChartRodData(toY: 45, color: Colors.blue),
-                          BarChartRodData(toY: 20, color: Colors.purple),
-                          BarChartRodData(toY: 25, color: Colors.cyan),
-                        ],
-                      ),
-                      BarChartGroupData(
-                        x: 3,
-                        barRods: [
-                          BarChartRodData(toY: 70, color: Colors.blue),
-                          BarChartRodData(toY: 40, color: Colors.purple),
-                          BarChartRodData(toY: 65, color: Colors.cyan),
-                        ],
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
 
@@ -223,50 +321,149 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // === INGRESOS ===
                   Expanded(
-                    child: ResumenCard(
-                      color: AppColors.primary,
-                      icon: Icons.arrow_upward_rounded,
-                      title: "Ingresos",
-                      amount: "\$23,000.00",
-                      iconColor: AppColors.background,
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('facturas')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return ResumenCard(
+                            color: AppColors.primary,
+                            icon: Icons.arrow_upward_rounded,
+                            title: "Ingresos",
+                            amount: "\$0.00",
+                            iconColor: AppColors.background,
+                          );
+                        }
+
+                        double totalIngresos = 0;
+
+                        if (snapshot.hasData &&
+                            snapshot.data!.docs.isNotEmpty) {
+                          for (var doc in snapshot.data!.docs) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            final monto = (data['monto'] ?? 0).toDouble();
+                            if (monto > 0) totalIngresos += monto;
+                          }
+                        }
+
+                        // nunca menor que 0
+                        final ingresosSeguros = totalIngresos < 0
+                            ? 0
+                            : totalIngresos;
+
+                        return ResumenCard(
+                          color: AppColors.primary,
+                          icon: Icons.arrow_upward_rounded,
+                          title: "Ingresos",
+                          amount: "\$${ingresosSeguros.toStringAsFixed(2)}",
+                          iconColor: AppColors.background,
+                        );
+                      },
                     ),
                   ),
+
                   const SizedBox(width: 16),
+
+                  // === GASTOS ===
                   Expanded(
-                    child: ResumenCard(
-                      color: AppColors.error,
-                      icon: Icons.arrow_downward_rounded,
-                      title: "Gastos",
-                      amount: "\$15,000.00",
-                      iconColor: AppColors.background,
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('facturas')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return ResumenCard(
+                            color: AppColors.error,
+                            icon: Icons.arrow_downward_rounded,
+                            title: "Gastos",
+                            amount: "\$0.00",
+                            iconColor: AppColors.background,
+                          );
+                        }
+
+                        double totalGastos = 0;
+
+                        if (snapshot.hasData &&
+                            snapshot.data!.docs.isNotEmpty) {
+                          for (var doc in snapshot.data!.docs) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            final monto = (data['monto'] ?? 0).toDouble();
+                            if (monto < 0) totalGastos += monto.abs();
+                          }
+                        }
+
+                        // nunca menor que 0
+                        final gastosSeguros = totalGastos < 0 ? 0 : totalGastos;
+
+                        return ResumenCard(
+                          color: AppColors.error,
+                          icon: Icons.arrow_downward_rounded,
+                          title: "Gastos",
+                          amount: "\$${gastosSeguros.toStringAsFixed(2)}",
+                          iconColor: AppColors.background,
+                        );
+                      },
                     ),
                   ),
                 ],
               ),
-
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
               // ===== CHIPS DE CATEGORÍAS =====
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: const [
-                    SizedBox(width: 8),
-                    CategoryChip(
-                      label: "Transporte",
-                      icon: Icons.directions_bus,
-                    ),
-                    SizedBox(width: 8),
-                    CategoryChip(label: "Alimentación", icon: Icons.fastfood),
-                    SizedBox(width: 8),
-                    CategoryChip(label: "Estudios", icon: Icons.school),
-                    SizedBox(width: 8),
-                  ],
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('facturas')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Text("Cargando categorías..."),
+                      );
+                    }
+
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Text("No hay categorías aún"),
+                      );
+                    }
+
+                    // Extraer todas las categorías únicas
+                    final categorias = snapshot.data!.docs
+                        .map(
+                          (doc) =>
+                              (doc.data()
+                                  as Map<String, dynamic>)['categoria'] ??
+                              'General',
+                        )
+                        .toSet()
+                        .toList();
+
+                    return Row(
+                      children: [
+                        const SizedBox(width: 8),
+                        ...categorias.map((categoria) {
+                          final icono = _getIconForCategory(categoria);
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: CategoryChip(label: categoria, icon: icono),
+                          );
+                        }).toList(),
+                      ],
+                    );
+                  },
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
               // ===== LISTA DE GASTOS =====
               Padding(
@@ -298,26 +495,74 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              GastoItem(
-                icon: Icons.local_cafe,
-                title: "Starbucks",
-                date: "Sep 13, 2025",
-                amount: "-\$12,000.00",
-                status: "Pagado",
-              ),
-              GastoItem(
-                icon: Icons.directions_bus,
-                title: "Bus - MIO",
-                date: "Sep 13, 2025",
-                amount: "-\$6,000.00",
-                status: "Pagado",
-              ),
-              GastoItem(
-                icon: Icons.fastfood,
-                title: "McDonalds",
-                date: "Sep 10, 2025",
-                amount: "-\$20,000.00",
-                status: "Pagado",
+
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('facturas')
+                    .orderBy('fecha', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Text(
+                      "No hay gastos recientes",
+                      style: TextStyle(color: AppColors.textHint),
+                    );
+                  }
+
+                  // Fecha límite = hace 2 días
+                  final ahora = DateTime.now();
+                  final haceDosDias = ahora.subtract(const Duration(days: 2));
+
+                  // Filtrar solo gastos de los últimos 2 días
+                  final gastosRecientes = snapshot.data!.docs.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final monto = (data['monto'] ?? 0).toDouble();
+                    final fecha = (data['fecha'] as Timestamp).toDate();
+                    return monto < 0 && fecha.isAfter(haceDosDias);
+                  }).toList();
+
+                  if (gastosRecientes.isEmpty) {
+                    return const Text(
+                      "No hay gastos en los últimos 2 días",
+                      style: TextStyle(color: AppColors.textHint),
+                    );
+                  }
+
+                  // Mostrar los gastos como lista de GastoItem
+                  return Column(
+                    children: gastosRecientes.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final titulo = data['titulo'] ?? 'Sin título';
+                      final fecha = (data['fecha'] as Timestamp).toDate();
+                      final monto = (data['monto'] ?? 0).toDouble();
+                      final categoria = data['categoria'] ?? 'General';
+
+                      // Formato de fecha: Oct 24, 2025
+                      final fechaFormateada = DateFormat(
+                        "MMM d, y",
+                        "es_ES",
+                      ).format(fecha);
+
+                      // Ícono según categoría
+                      final icono = _getIconForCategory(categoria);
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: GastoItem(
+                          icon: icono,
+                          title: titulo,
+                          date: fechaFormateada,
+                          amount: "-\$${monto.abs().toStringAsFixed(2)}",
+                          status: "Pagado",
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
               ),
             ],
           ),
@@ -330,7 +575,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () {
           NavHelper.navigateAndReplace(context, const ScanAlertScreen());
         },
-        child: const Icon(Icons.camera_alt_outlined, size: 28),
+        child: const Icon(Icons.camera_alt_rounded, size: 28),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
@@ -340,14 +585,52 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 60,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: const [
-              NavItem(icon: Icons.home, label: "Principal", active: true),
+            children: [
+              NavItem(
+                icon: Icons.home,
+                label: "Principal",
+                active: true,
+                onTap: () {
+                  NavHelper.navigateAndReplace(context, const HomeScreen());
+                },
+              ),
               SizedBox(width: 48), // espacio para el FAB
-              NavItem(icon: Icons.history, label: "Historial", active: false),
+              NavItem(
+                icon: Icons.history,
+                label: "Historial",
+                active: false,
+                onTap: () {
+                  NavHelper.navigateAndReplace(
+                    context,
+                    const HistorialFinancieroScreen(),
+                  );
+                },
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  IconData _getIconForCategory(String categoria) {
+    switch (categoria.toLowerCase()) {
+      case 'transporte':
+        return Icons.directions_bus;
+      case 'alimentación':
+      case 'restaurantes':
+        return Icons.fastfood;
+      case 'estudios':
+      case 'educación':
+        return Icons.school;
+      case 'salud':
+        return Icons.local_hospital;
+      case 'compras':
+        return Icons.shopping_bag;
+      case 'servicios':
+        return Icons.lightbulb;
+      default:
+        return Icons.category; // ícono genérico
+    }
   }
 }

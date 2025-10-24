@@ -1,6 +1,7 @@
 import 'package:app/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
+/// Widget para mostrar un ítem de gasto en homepage
 class GastoItem extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -26,7 +27,10 @@ class GastoItem extends StatelessWidget {
         backgroundColor: AppColors.buttonSecondary,
         child: Icon(icon, color: AppColors.textPrimary, size: 22),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+      ),
       subtitle: Text(date, style: const TextStyle(fontSize: 12)),
       trailing: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -41,7 +45,7 @@ class GastoItem extends StatelessWidget {
               amount,
               style: const TextStyle(
                 color: Colors.red,
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
                 fontFamily: 'Inter',
                 height: 1,

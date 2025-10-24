@@ -12,6 +12,7 @@ dependencies:
   fl_chart: ^1.1.1
   flutter:
     sdk: flutter
+  intl: ^0.19.0
   flutter_svg: ^2.0.9
   intl_phone_field: ^3.2.0
 

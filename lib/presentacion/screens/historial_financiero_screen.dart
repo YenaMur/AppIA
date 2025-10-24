@@ -1,5 +1,5 @@
 import 'package:app/core/utils/nav_helper.dart';
-import 'package:app/presentacion/screens/camera_preview_screen.dart';
+import 'package:app/presentacion/home/home_screen.dart';
 import 'package:app/presentacion/screens/scan_alert_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:app/core/constants/app_colors.dart';
@@ -8,6 +8,7 @@ import 'package:app/presentacion/widgets/factura_card.dart';
 import 'package:app/presentacion/widgets/nav_item.dart';
 import 'package:app/presentacion/widgets/filter_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:app/presentacion/screens/facturacion_screen.dart';
 
 class HistorialFinancieroScreen extends StatefulWidget {
   const HistorialFinancieroScreen({super.key});
@@ -19,7 +20,7 @@ class HistorialFinancieroScreen extends StatefulWidget {
 
 class _HistorialFinancieroScreenState extends State<HistorialFinancieroScreen> {
   String filtroSeleccionado = "Todo"; //  Estado del filtro activo
-  String _selectedPeriod = 'Este mes'; // 🔹 Estado del periodo seleccionado
+  String _selectedPeriod = 'Este mes'; // Estado del periodo seleccionado
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +42,8 @@ class _HistorialFinancieroScreenState extends State<HistorialFinancieroScreen> {
               Icons.arrow_back_rounded,
               color: AppColors.textPrimary,
             ),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () =>
+                NavHelper.navigateAndReplace(context, HomeScreen()),
           ),
         ),
         title: const Padding(
@@ -94,10 +96,27 @@ class _HistorialFinancieroScreenState extends State<HistorialFinancieroScreen> {
           height: 60,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: const [
-              NavItem(icon: Icons.home, label: "Principal", active: false),
+            children: [
+              NavItem(
+                icon: Icons.home,
+                label: "Principal",
+                active: false,
+                onTap: () {
+                  NavHelper.navigateAndReplace(context, const HomeScreen());
+                },
+              ),
               SizedBox(width: 48), // espacio para el FAB
-              NavItem(icon: Icons.history, label: "Historial", active: true),
+              NavItem(
+                icon: Icons.history,
+                label: "Historial",
+                active: true,
+                onTap: () {
+                  NavHelper.navigateAndReplace(
+                    context,
+                    const HistorialFinancieroScreen(),
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -108,63 +127,104 @@ class _HistorialFinancieroScreenState extends State<HistorialFinancieroScreen> {
   // ======== SECCIONES ========
 
   Widget _buildResumenMes() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFDCDCDC),
-            blurRadius: 8,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text(
-                "Resumen del Mes",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Text(
-                "Ver Todo",
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textHint,
-                ),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('facturas')
+          .orderBy('fecha', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        double totalIngresos = 0;
+        double totalGastos = 0;
+
+        if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+          for (var doc in snapshot.data!.docs) {
+            final data = doc.data() as Map<String, dynamic>;
+            final monto = (data['monto'] ?? 0).toDouble();
+            if (monto < 0) {
+              totalGastos += monto.abs();
+            } else {
+              totalIngresos += monto;
+            }
+          }
+        }
+
+        final balance = totalIngresos - totalGastos;
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFDCDCDC),
+                blurRadius: 8,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          const Text(
-            "Septiembre 2025",
-            style: TextStyle(fontSize: 12, color: AppColors.textHint),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              ResumenItem(title: "Ingresos", value: "\$650,000"),
-              ResumenItem(
-                title: "Gastos",
-                value: "\$326,250",
-                color: Colors.red,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ===== Encabezado =====
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text(
+                    "Resumen del Mes",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    "Ver Todo",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textHint,
+                    ),
+                  ),
+                ],
               ),
-              ResumenItem(title: "Balance", value: "\$323,750"),
+              const SizedBox(height: 4),
+              Text(
+                _getMesActual(),
+                style: const TextStyle(fontSize: 12, color: AppColors.textHint),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ===== Totales =====
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ResumenItem(
+                    title: "Ingresos",
+                    value: "\$${totalIngresos.toStringAsFixed(0)}",
+                    color: Colors.black,
+                  ),
+                  ResumenItem(
+                    title: "Gastos",
+                    value: "\$${totalGastos.toStringAsFixed(0)}",
+                    color: Colors.red,
+                  ),
+                  ResumenItem(
+                    title: "Balance",
+                    value: "\$${balance.toStringAsFixed(0)}",
+                    color: balance >= 0 ? Colors.black : Colors.red,
+                  ),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -190,35 +250,27 @@ class _HistorialFinancieroScreenState extends State<HistorialFinancieroScreen> {
     );
   }
 
-  Widget _buildFacturasRecientes() {
-    // Lista de facturas completas
-    final facturas = [
-      {
-        "title": "CAN PUJON",
-        "amount": "-\$91.50",
-        "method": "Efectivo",
-        "date": "25/08/2025",
-        "color": const Color(0xFFFF6B6B),
-        "tipo": "Gasto",
-      },
-      {
-        "title": "TRABAJO",
-        "amount": "\$200,000",
-        "method": "Tarjeta Débito",
-        "date": "31/08/2025",
-        "color": const Color(0xFF00C37D),
-        "tipo": "Ingreso",
-      },
+  String _getMesActual() {
+    final ahora = DateTime.now()
+        .toLocal(); // se ajusta a la zona horaria del dispositivo
+    const meses = [
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
     ];
+    return '${meses[ahora.month - 1]} ${ahora.year}';
+  }
 
-    // Filtrar según el botón seleccionado
-    final filtradas = facturas.where((f) {
-      if (filtroSeleccionado == "Todo") return true;
-      if (filtroSeleccionado == "Ingresos") return f["tipo"] == "Ingreso";
-      if (filtroSeleccionado == "Gastos") return f["tipo"] == "Gasto";
-      return false;
-    }).toList();
-
+  Widget _buildFacturasRecientes() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -233,15 +285,13 @@ class _HistorialFinancieroScreenState extends State<HistorialFinancieroScreen> {
                 color: AppColors.textPrimary,
               ),
             ),
-
-            //  Filtro de periodo (dropdown)
             DropdownButton<String>(
               value: _selectedPeriod,
               icon: const Icon(
                 Icons.keyboard_arrow_down_rounded,
                 color: AppColors.textSecondary,
               ),
-              underline: const SizedBox(), // sin línea inferior
+              underline: const SizedBox(),
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
@@ -262,27 +312,78 @@ class _HistorialFinancieroScreenState extends State<HistorialFinancieroScreen> {
                   child: Text('Último año'),
                 ),
               ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedPeriod = value!;
-                });
-              },
+              onChanged: (value) => setState(() => _selectedPeriod = value!),
             ),
           ],
         ),
         const SizedBox(height: 16),
 
-        // Render dinámico
-        for (var f in filtradas) ...[
-          FacturaCard(
-            title: f["title"] as String,
-            amount: f["amount"] as String,
-            method: f["method"] as String,
-            date: f["date"] as String,
-            color: f["color"] as Color,
-          ),
-          const SizedBox(height: 12),
-        ],
+        // Escucha de datos en tiempo real desde Firestore
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('facturas')
+              .orderBy('fecha', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const Text(
+                "No hay facturas aún",
+                style: TextStyle(color: AppColors.textHint),
+              );
+            }
+
+            final facturas = snapshot.data!.docs.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              final monto = (data['monto'] ?? 0).toDouble();
+              final tipo = monto < 0 ? "Gastos" : "Ingresos";
+              if (filtroSeleccionado == "Todo") return true;
+              return filtroSeleccionado == tipo;
+            }).toList();
+
+            return Column(
+              children: facturas.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final titulo = data['titulo'] ?? 'Sin título';
+                final metodo = data['metodo'] ?? 'Desconocido';
+                final fecha = (data['fecha'] as Timestamp).toDate();
+                final monto = (data['monto'] ?? 0).toDouble();
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: FacturaCard(
+                    title: titulo,
+                    amount: "\$${monto.toStringAsFixed(2)}",
+                    method: metodo,
+                    date: "${fecha.day}/${fecha.month}/${fecha.year}",
+                    category: data['categoria'] ?? 'General',
+                    color: monto < 0
+                        ? const Color(0xFFFF6B6B)
+                        : const Color(0xFF00C37D),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FacturacionScreen(
+                            id: doc.id, //enviamos el ID del documento
+                            titulo: titulo,
+                            monto: monto,
+                            metodo: metodo,
+                            categoria: data['categoria'] ?? 'General',
+                            fecha: fecha,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
       ],
     );
   }

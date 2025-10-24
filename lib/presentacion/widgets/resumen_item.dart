@@ -20,7 +20,7 @@ class ResumenItem extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w700,
             color: color,
           ),
