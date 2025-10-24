@@ -167,10 +167,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
                             ),
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () {
-                                // TODO: abrir enlace de términos
-                              },
+                            recognizer: TapGestureRecognizer()..onTap = () {},
                           ),
                           const TextSpan(text: ' y nuestro '),
                           TextSpan(
@@ -179,10 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
                             ),
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () {
-                                // TODO: abrir enlace de privacidad
-                              },
+                            recognizer: TapGestureRecognizer()..onTap = () {},
                           ),
                         ],
                       ),

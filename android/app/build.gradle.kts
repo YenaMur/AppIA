@@ -3,6 +3,7 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -30,6 +31,12 @@ android {
         versionName = flutter.versionName
     }
 
+    dependencies {
+    // Import the Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
+
+}
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
@@ -42,3 +49,4 @@ android {
 flutter {
     source = "../.."
 }
+

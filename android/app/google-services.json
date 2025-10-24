@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "726781005739",
+    "project_id": "appia-e2141",
+    "storage_bucket": "appia-e2141.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:726781005739:android:8f1df23ad1bcb189f38cee",
+        "android_client_info": {
+          "package_name": "com.example.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA23Lki89a6RA8Xa5rWBPvMz_iX7id7QUM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -343,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: const [
               NavItem(icon: Icons.home, label: "Principal", active: true),
               SizedBox(width: 48), // espacio para el FAB
-              NavItem(icon: Icons.history, label: "Historial"),
+              NavItem(icon: Icons.history, label: "Historial", active: false),
             ],
           ),
         ),
