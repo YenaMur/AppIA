@@ -90,119 +90,179 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Factor de escala adaptativo
+    final scaleFactor = screenHeight < 700
+        ? 0.9
+        : (screenHeight > 900 ? 1.2 : 1.05);
+
+    return SafeArea(
+      child: Scaffold(
         backgroundColor: AppColors.background,
-        elevation: 0,
-        centerTitle: true,
-        toolbarHeight: 72,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_rounded,
-              color: AppColors.textPrimary,
-            ),
-            onPressed: () => NavHelper.navigateAndReplace(
-              context,
-              HistorialFinancieroScreen(),
-            ),
-          ),
-        ),
-        title: Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: const Text(
-            "Editar Factura",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          children: [
-            const SizedBox(height: 32),
-
-            // ===== Monto =====
-            Text(
-              "\$${_montoController.text}",
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "Total de la factura",
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            Expanded(
-              child: ListView(
-                children: [
-                  FacturaRow(label: "Proveedor", value: widget.titulo),
-                  FacturaRow(
-                    label: "Categoría",
-                    value: widget.categoria,
-                    editable: true,
-                    controller: _categoriaController,
-                  ),
-                  FacturaRow(
-                    label: "Método de pago",
-                    value: widget.metodo,
-                    editable: true,
-                    controller: _metodoController,
-                  ),
-                  FacturaRow(
-                    label: "Fecha",
-                    value:
-                        "${widget.fecha.day}/${widget.fecha.month}/${widget.fecha.year}",
-                  ),
-                  FacturaRow(
-                    label: "Total",
-                    value: "\$${widget.monto.toStringAsFixed(2)}",
-                    editable: true,
-                    controller: _montoController,
-                  ),
-                ],
-              ),
-            ),
-
-            // ===== Botón guardar =====
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () => _guardarCambios(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(screenHeight * 0.1),
+          child: AppBar(
+            backgroundColor: AppColors.background,
+            elevation: 0,
+            centerTitle: true,
+            leading: Padding(
+              padding: EdgeInsets.only(left: screenWidth * 0.02),
+              child: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppColors.textPrimary,
+                  size: (screenHeight * 0.032) * scaleFactor,
                 ),
-                child: const Text(
-                  "Guardar cambios",
-                  style: TextStyle(
-                    color: AppColors.background,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                onPressed: () => NavHelper.navigateAndReplace(
+                  context,
+                  const HistorialFinancieroScreen(),
                 ),
               ),
             ),
-            const SizedBox(height: 52),
-          ],
+            title: Padding(
+              padding: EdgeInsets.only(top: screenHeight * 0.01),
+              child: Text(
+                "Editar Factura",
+                style: TextStyle(
+                  fontSize: (screenHeight * 0.022) * scaleFactor,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ),
+        ),
+        body: Padding(
+          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
+          child: Column(
+            children: [
+              SizedBox(height: screenHeight * 0.04),
+
+              // ===== MONTO TOTAL =====
+              Text(
+                "\$${_montoController.text}",
+                style: TextStyle(
+                  fontSize: (screenHeight * 0.04) * scaleFactor,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                  fontFamily: 'Inter',
+                ),
+              ),
+              SizedBox(height: screenHeight * 0.005),
+              Text(
+                "Total de la factura",
+                style: TextStyle(
+                  fontSize: (screenHeight * 0.016) * scaleFactor,
+                  color: AppColors.textSecondary,
+                  fontFamily: 'Inter',
+                ),
+              ),
+
+              SizedBox(height: screenHeight * 0.04),
+
+              // ===== CAMPOS =====
+              Expanded(
+                child: ListView(
+                  children: [
+                    FacturaRow(
+                      label: "Proveedor",
+                      value: widget.titulo,
+                      labelStyle: TextStyle(
+                        fontSize: (screenHeight * 0.014) * scaleFactor,
+                        color: AppColors.textSecondary,
+                      ),
+                      valueStyle: TextStyle(
+                        fontSize: (screenHeight * 0.016) * scaleFactor,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    FacturaRow(
+                      label: "Categoría",
+                      value: widget.categoria,
+                      editable: true,
+                      controller: _categoriaController,
+                      labelStyle: TextStyle(
+                        fontSize: (screenHeight * 0.014) * scaleFactor,
+                        color: AppColors.textSecondary,
+                      ),
+                      valueStyle: TextStyle(
+                        fontSize: (screenHeight * 0.016) * scaleFactor,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    FacturaRow(
+                      label: "Método de pago",
+                      value: widget.metodo,
+                      editable: true,
+                      controller: _metodoController,
+                      labelStyle: TextStyle(
+                        fontSize: (screenHeight * 0.014) * scaleFactor,
+                        color: AppColors.textSecondary,
+                      ),
+                      valueStyle: TextStyle(
+                        fontSize: (screenHeight * 0.016) * scaleFactor,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    FacturaRow(
+                      label: "Fecha",
+                      value:
+                          "${widget.fecha.day}/${widget.fecha.month}/${widget.fecha.year}",
+                      labelStyle: TextStyle(
+                        fontSize: (screenHeight * 0.014) * scaleFactor,
+                        color: AppColors.textSecondary,
+                      ),
+                      valueStyle: TextStyle(
+                        fontSize: (screenHeight * 0.016) * scaleFactor,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    FacturaRow(
+                      label: "Total",
+                      value: "\$${widget.monto.toStringAsFixed(2)}",
+                      editable: true,
+                      controller: _montoController,
+                      labelStyle: TextStyle(
+                        fontSize: (screenHeight * 0.014) * scaleFactor,
+                        color: AppColors.textSecondary,
+                      ),
+                      valueStyle: TextStyle(
+                        fontSize: (screenHeight * 0.016) * scaleFactor,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ===== BOTÓN GUARDAR =====
+              SizedBox(
+                width: double.infinity,
+                height: screenHeight * 0.065,
+                child: ElevatedButton(
+                  onPressed: () => _guardarCambios(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    "Guardar cambios",
+                    style: TextStyle(
+                      color: AppColors.background,
+                      fontSize: (screenHeight * 0.018) * scaleFactor,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: screenHeight * 0.07),
+            ],
+          ),
         ),
       ),
     );

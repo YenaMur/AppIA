@@ -32,271 +32,330 @@ class _LoginWithPhoneScreenState extends State<LoginWithPhoneScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Factor de escala adaptativo reducido
+    final scaleFactor = screenHeight < 700
+        ? 0.9
+        : (screenHeight > 900 ? 1.2 : 1.05);
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              // Contenido principal con scroll
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
+          child: SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: screenHeight * 0.012),
+
+                // Botón atrás
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                    onPressed: () =>
+                        NavHelper.navigateAndReplace(context, LoginScreen()),
+                    iconSize: (screenHeight * 0.020) * scaleFactor,
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.buttonSecondary,
+                      foregroundColor: AppColors.textSecondary,
+                      padding: EdgeInsets.all(screenWidth * 0.02),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: screenHeight * 0.012),
+
+                // Título principal
+                Text(
+                  AppTexts.welcomeBack,
+                  style: TextStyle(
+                    fontSize: (screenHeight * 0.032) * scaleFactor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: screenHeight * 0.003),
+
+                Text(
+                  AppTexts.loginSubtitle,
+                  style: TextStyle(
+                    fontSize: (screenHeight * 0.012) * scaleFactor,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+
+                SizedBox(height: screenHeight * 0.025),
+
+                // Selector Correo / Celular - CENTRADO
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Botón atrás
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                          onPressed: () => NavHelper.navigateAndReplace(
-                            context,
-                            LoginScreen(),
-                          ),
-                          style: IconButton.styleFrom(
+                      SizedBox(
+                        width: screenWidth * 0.38,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            NavHelper.navigateAndReplace(
+                              context,
+                              const LoginScreen(),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.buttonSecondary,
-                            foregroundColor: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Título principal
-                      const Text(
-                        AppTexts.welcomeBack,
-                        style: TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-
-                      const Text(
-                        AppTexts.loginSubtitle,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-
-                      const SizedBox(height: 48),
-
-                      // Selector Email / Número
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                NavHelper.navigateAndReplace(
-                                  context,
-                                  const LoginScreen(),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.buttonSecondary,
-                                foregroundColor: AppColors.textPrimary,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                textStyle: const TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              child: const Text(AppTexts.email),
+                            foregroundColor: AppColors.textPrimary,
+                            elevation: 0,
+                            padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.010,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            textStyle: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w400,
+                              fontSize: (screenHeight * 0.015) * scaleFactor,
                             ),
                           ),
-
-                          const SizedBox(width: 8),
-
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {},
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.background,
-                                foregroundColor: AppColors.textPrimary,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                textStyle: const TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 13.835,
-                                ),
-                              ),
-                              child: const Text(AppTexts.phone),
+                          child: const Text('Correo'),
+                        ),
+                      ),
+                      SizedBox(width: screenWidth * 0.02),
+                      SizedBox(
+                        width: screenWidth * 0.38,
+                        child: ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.background,
+                            foregroundColor: AppColors.textPrimary,
+                            elevation: 0,
+                            padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.010,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            textStyle: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w400,
+                              fontSize: (screenHeight * 0.015) * scaleFactor,
                             ),
                           ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 64),
-
-                      // Formulario
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Campo teléfono
-                            IntlPhoneField(
-                              flagsButtonPadding: const EdgeInsets.only(
-                                left: 8,
-                              ),
-                              controller: _phoneController,
-                              decoration: const InputDecoration(
-                                labelText: AppTexts.phone,
-                                hintText: AppTexts.enterPhone,
-                                border: OutlineInputBorder(),
-                              ),
-                              initialCountryCode: 'CO', // 🇨🇴 Colombia
-                              dropdownIconPosition: IconPosition.trailing,
-                              disableLengthCheck:
-                                  true, // evita advertencias de longitud
-                              style: const TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                              ),
-                              onChanged: (phone) {
-                                // Muestra el número completo (con prefijo)
-                                debugPrint(
-                                  'Número completo: ${phone.completeNumber}',
-                                );
-                              },
-                              onCountryChanged: (country) {
-                                debugPrint(
-                                  'País seleccionado: ${country.name}',
-                                );
-                              },
-                              validator: (phone) {
-                                if (phone == null || phone.number.isEmpty) {
-                                  return 'Por favor ingresa tu número de teléfono.';
-                                }
-                                return null;
-                              },
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: !_isPasswordVisible,
-                              decoration: InputDecoration(
-                                labelText: AppTexts.password,
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _isPasswordVisible
-                                        ? Icons.visibility
-                                        : Icons.visibility_off,
-                                  ),
-                                  onPressed: () => setState(() {
-                                    _isPasswordVisible = !_isPasswordVisible;
-                                  }),
-                                ),
-                              ),
-                              validator: Validator.validatePassword,
-                            ),
-
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: () {},
-                                child: const Text(
-                                  AppTexts.forgotPassword,
-                                  style: TextStyle(color: Colors.blue),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            // Botón principal
-                            ElevatedButton(
-                              onPressed: _login,
-                              child: const Text(
-                                AppTexts.loginAccess,
-                                style: TextStyle(fontSize: 16),
-                              ),
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            const Center(
-                              child: Text(
-                                AppTexts.continueWith,
-                                style: TextStyle(color: AppColors.textHint),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Botones Google / Apple
-                            ElevatedButton.icon(
-                              onPressed: () {},
-                              icon: SvgPicture.asset(
-                                AppPaths.iconoGoogle,
-                                width: 24,
-                                height: 24,
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey.shade200,
-                                foregroundColor: Colors.black,
-                              ),
-                              label: const Text(
-                                AppTexts.loginWithGoogle,
-                                style: TextStyle(fontSize: 15),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            ElevatedButton.icon(
-                              onPressed: () {},
-                              icon: const Icon(
-                                Icons.apple,
-                                color: Colors.black,
-                                size: 40,
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey.shade200,
-                                foregroundColor: Colors.black,
-                              ),
-                              label: const Text(
-                                AppTexts.loginWithApple,
-                                style: TextStyle(fontSize: 15),
-                              ),
-                            ),
-                          ],
+                          child: const Text('Celular'),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
 
-              // Texto inferior fijo (64 px del borde)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 64),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(AppTexts.noAccount),
-                    TextButton(
-                      onPressed: () {
-                        NavHelper.navigateAndReplace(
-                          context,
-                          const RegisterScreen(),
-                        );
-                      },
-                      child: const Text(AppTexts.registerNow),
-                    ),
-                  ],
+                SizedBox(height: screenHeight * 0.028),
+
+                // Formulario
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Campo teléfono
+                      IntlPhoneField(
+                        flagsButtonPadding: EdgeInsets.only(
+                          left: screenWidth * 0.02,
+                        ),
+                        controller: _phoneController,
+                        decoration: InputDecoration(
+                          labelText: AppTexts.phone,
+                          hintText: AppTexts.enterPhone,
+                          labelStyle: TextStyle(
+                            fontSize: (screenHeight * 0.015) * scaleFactor,
+                          ),
+                          hintStyle: TextStyle(
+                            fontSize: (screenHeight * 0.015) * scaleFactor,
+                          ),
+                          border: const OutlineInputBorder(),
+                        ),
+                        initialCountryCode: 'CO',
+                        dropdownIconPosition: IconPosition.trailing,
+                        disableLengthCheck: true,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: (screenHeight * 0.016) * scaleFactor,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        onChanged: (phone) {
+                          debugPrint(
+                            'Número completo: ${phone.completeNumber}',
+                          );
+                        },
+                        onCountryChanged: (country) {
+                          debugPrint('País seleccionado: ${country.name}');
+                        },
+                        validator: (phone) {
+                          if (phone == null || phone.number.isEmpty) {
+                            return 'Por favor ingresa tu número de teléfono.';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      SizedBox(height: screenHeight * 0.015),
+
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: !_isPasswordVisible,
+                        style: TextStyle(
+                          fontSize: (screenHeight * 0.016) * scaleFactor,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: AppTexts.password,
+                          labelStyle: TextStyle(
+                            fontSize: (screenHeight * 0.015) * scaleFactor,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              size: (screenHeight * 0.023) * scaleFactor,
+                            ),
+                            onPressed: () => setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            }),
+                          ),
+                        ),
+                        validator: Validator.validatePassword,
+                      ),
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {},
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.006,
+                            ),
+                          ),
+                          child: Text(
+                            AppTexts.forgotPassword,
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: (screenHeight * 0.014) * scaleFactor,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: screenHeight * 0.012),
+
+                      // Botón principal
+                      SizedBox(
+                        height: screenHeight * 0.055,
+                        child: ElevatedButton(
+                          onPressed: _login,
+                          child: Text(
+                            AppTexts.loginAccess,
+                            style: TextStyle(
+                              fontSize: (screenHeight * 0.016) * scaleFactor,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: screenHeight * 0.015),
+
+                      Center(
+                        child: Text(
+                          AppTexts.continueWith,
+                          style: TextStyle(
+                            color: AppColors.textHint,
+                            fontSize: (screenHeight * 0.014) * scaleFactor,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: screenHeight * 0.015),
+
+                      // Botones Google / Apple
+                      SizedBox(
+                        height: screenHeight * 0.055,
+                        child: ElevatedButton.icon(
+                          onPressed: () {},
+                          icon: SvgPicture.asset(
+                            AppPaths.iconoGoogle,
+                            width: (screenHeight * 0.026) * scaleFactor,
+                            height: (screenHeight * 0.026) * scaleFactor,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey.shade200,
+                            foregroundColor: Colors.black,
+                          ),
+                          label: Text(
+                            AppTexts.loginWithGoogle,
+                            style: TextStyle(
+                              fontSize: (screenHeight * 0.015) * scaleFactor,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: screenHeight * 0.012),
+
+                      SizedBox(
+                        height: screenHeight * 0.055,
+                        child: ElevatedButton.icon(
+                          onPressed: () {},
+                          icon: Icon(
+                            Icons.apple,
+                            color: Colors.black,
+                            size: (screenHeight * 0.032) * scaleFactor,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey.shade200,
+                            foregroundColor: Colors.black,
+                          ),
+                          label: Text(
+                            AppTexts.loginWithApple,
+                            style: TextStyle(
+                              fontSize: (screenHeight * 0.015) * scaleFactor,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: screenHeight * 0.025),
+
+                      // Texto inferior
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            AppTexts.noAccount,
+                            style: TextStyle(
+                              fontSize: (screenHeight * 0.015) * scaleFactor,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              NavHelper.navigateAndReplace(
+                                context,
+                                const RegisterScreen(),
+                              );
+                            },
+                            child: Text(
+                              AppTexts.registerNow,
+                              style: TextStyle(
+                                fontSize: (screenHeight * 0.015) * scaleFactor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: screenHeight * 0.025),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

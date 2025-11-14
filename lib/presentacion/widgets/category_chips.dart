@@ -15,8 +15,19 @@ class CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Factor de escala adaptativo
+    final scaleFactor = screenHeight < 700
+        ? 0.9
+        : (screenHeight > 900 ? 1.2 : 1.05);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.03,
+        vertical: screenHeight * 0.01,
+      ),
       decoration: BoxDecoration(
         color: isSelected ? AppColors.primary : AppColors.buttonSecondary,
         borderRadius: BorderRadius.circular(20),
@@ -24,8 +35,12 @@ class CategoryChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: AppColors.textPrimary),
-          const SizedBox(width: 6),
+          Icon(
+            icon,
+            size: (screenHeight * 0.02) * scaleFactor,
+            color: isSelected ? AppColors.background : AppColors.textPrimary,
+          ),
+          SizedBox(width: screenWidth * 0.015),
           Text(
             label,
             style: TextStyle(
@@ -33,6 +48,8 @@ class CategoryChip extends StatelessWidget {
                   ? AppColors.background
                   : AppColors.textSecondary,
               fontWeight: FontWeight.w500,
+              fontSize: (screenHeight * 0.012) * scaleFactor,
+              fontFamily: 'Inter',
             ),
           ),
         ],

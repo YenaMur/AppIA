@@ -15,22 +15,42 @@ class ResumenItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: color,
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Factor de escala adaptativo
+    final scaleFactor = screenHeight < 700
+        ? 0.9
+        : (screenHeight > 900 ? 1.2 : 1.05);
+
+    return Flexible(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: (screenHeight * 0.015) * scaleFactor,
+              fontWeight: FontWeight.w700,
+              color: color,
+              fontFamily: 'Inter',
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          style: const TextStyle(fontSize: 12, color: AppColors.textHint),
-        ),
-      ],
+          SizedBox(height: screenHeight * 0.004),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: (screenHeight * 0.012) * scaleFactor,
+              color: AppColors.textHint,
+              fontFamily: 'Inter',
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,67 +1,54 @@
 const functions = require("firebase-functions");
-const admin = require("firebase-admin");
 const vision = require("@google-cloud/vision");
-
+const admin = require("firebase-admin");
 admin.initializeApp();
-const db = admin.firestore();
+
+// Cliente de Google Vision
 const client = new vision.ImageAnnotatorClient();
 
-exports.analizarFactura = functions.storage.object().onFinalize(async (object) => {
-  const filePath = object.name;
-  const fileUrl = `gs://${object.bucket}/${filePath}`;
-  console.log("📄 Analizando:", fileUrl);
+/**
+ * Function: ocrFactura
+ * Analiza una imagen en Storage y devuelve el texto detectado
+ */
+exports.ocrFactura = functions.https.onCall(async (data, context) => {
+  const { imageUrl } = data;
+  if (!imageUrl) {
+    throw new functions.https.HttpsError("invalid-argument", "imageUrl is required");
+  }
 
   try {
-    // === OCR ===
-    const [result] = await client.textDetection(fileUrl);
+    // Detectar texto con Vision API
+    const [result] = await client.textDetection(imageUrl);
     const detections = result.textAnnotations;
-    const fullText = detections?.[0]?.description || "";
-    const texto = fullText.toLowerCase();
 
-    console.log("🧠 Texto detectado:", texto.slice(0, 200), "...");
-
-    // === CATEGORIZADOR INTELIGENTE ===
-    const categorias = {
-      Educación: ["universidad", "autónoma", "matrícula", "colegio", "curso"],
-      Restaurantes: ["burger", "mcdonald", "rey", "comida", "restaurante", "pizzería", "kfc"],
-      Compras: ["éxito", "d1", "carulla", "super", "mercado", "alkosto", "jumbo", "tienda"],
-      Transporte: ["uber", "taxi", "bus", "gasolina", "peaje", "metro"],
-      Servicios: ["tigo", "claro", "internet", "energía", "agua", "movistar", "emcali"],
-      Entretenimiento: ["cine", "netflix", "spotify", "parque", "teatro"],
-      Salud: ["farmacia", "clínica", "eps", "medicina", "laboratorio"],
-      Hogar: ["homecenter", "muebles", "ferretería", "decoración"],
-    };
-
-    let categoriaDetectada = "General";
-    for (const [categoria, palabras] of Object.entries(categorias)) {
-      if (palabras.some((p) => texto.includes(p))) {
-        categoriaDetectada = categoria;
-        break;
-      }
+    if (!detections || detections.length === 0) {
+      return { text: "", message: "No se detectó texto en la imagen." };
     }
 
-    // === MONTO ===
-    const matchMonto = fullText.match(/(\d+[.,]\d{2})/);
-    const monto = matchMonto ? parseFloat(matchMonto[0].replace(",", ".")) : 0;
+    // Texto completo
+    const fullText = detections[0].description;
 
-    // === PROVEEDOR ===
-    const proveedor = fullText.split("\n")[0].substring(0, 40);
+    // Intentar capturar monto con regex
+    const montoMatch = fullText.match(/(\$?\s?\d+([.,]\d{2})?)/);
+    const monto = montoMatch ? montoMatch[0].replace(/\s/g, "") : null;
 
-    // === GUARDAR EN FIRESTORE ===
-    await db.collection("facturas_pendientes").add({
-      titulo: proveedor,
-      categoria: categoriaDetectada,
+    // Intentar capturar fecha con regex
+    const fechaMatch = fullText.match(/(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4})/);
+    const fecha = fechaMatch ? fechaMatch[0] : null;
+
+    // Intentar detectar proveedor (primeras líneas de texto)
+    const lineas = fullText.split("\n");
+    const proveedor = lineas[0] || "Proveedor desconocido";
+
+    return {
+      text: fullText,
+      proveedor,
       monto,
-      metodo: "Detectado automáticamente",
-      fecha: admin.firestore.FieldValue.serverTimestamp(),
-      textoOCR: fullText,
-      filePath,
-    });
-
-    console.log(`✅ Guardado: ${proveedor} → ${categoriaDetectada} ($${monto})`);
-    return null;
+      fecha,
+      message: "Texto analizado correctamente ✅",
+    };
   } catch (error) {
-    console.error("❌ Error al analizar factura:", error);
-    return null;
+    console.error("Error en OCR:", error);
+    throw new functions.https.HttpsError("internal", error.message);
   }
 });

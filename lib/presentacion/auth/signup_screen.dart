@@ -16,55 +16,91 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Logo
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: 185,
-              ), // ajuste visual superior
-              child: Image.asset(AppPaths.logoColor, width: 500),
-            ),
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: screenWidth * 0.06, // 6% del ancho
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Espaciador superior flexible
+              const Spacer(flex: 3),
 
-            // Botones al fondo
-
-            // Login boton
-            Column(
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    NavHelper.navigateAndReplace(context, const LoginScreen());
-                  },
-                  child: const Text(AppTexts.loginButton),
+              // Logo
+              Flexible(
+                flex: 2,
+                child: Image.asset(
+                  AppPaths.logoColor,
+                  width: screenWidth * 0.6, // 60% del ancho
+                  fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 16),
+              ),
 
-                //Crear una cuenta boton
-                ElevatedButton(
-                  onPressed: () {
-                    NavHelper.navigateAndReplace(
-                      context,
-                      const RegisterScreen(),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.buttonSecondary,
-                    foregroundColor: AppColors.textPrimary,
-                    elevation: 0, // Sin sombra
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              // Espaciador medio flexible
+              const Spacer(flex: 3),
+
+              // Botones al fondo
+              Column(
+                children: [
+                  // Login botón
+                  SizedBox(
+                    width: double.infinity,
+                    height: screenHeight * 0.065, // 6.5% de la altura
+                    child: ElevatedButton(
+                      onPressed: () {
+                        NavHelper.navigateAndReplace(
+                          context,
+                          const LoginScreen(),
+                        );
+                      },
+                      child: Text(
+                        AppTexts.loginButton,
+                        style: TextStyle(
+                          fontSize: screenHeight * 0.02, // 2% de la altura
+                        ),
+                      ),
                     ),
                   ),
-                  child: const Text(AppTexts.registerButton),
-                ),
-                const SizedBox(height: 64), // distancia al borde inferior
-              ],
-            ),
-          ],
+                  SizedBox(height: screenHeight * 0.02), // 2% de la altura
+                  // Crear una cuenta botón
+                  SizedBox(
+                    width: double.infinity,
+                    height: screenHeight * 0.065, // 6.5% de la altura
+                    child: ElevatedButton(
+                      onPressed: () {
+                        NavHelper.navigateAndReplace(
+                          context,
+                          const RegisterScreen(),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.buttonSecondary,
+                        foregroundColor: AppColors.textPrimary,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        AppTexts.registerButton,
+                        style: TextStyle(
+                          fontSize: screenHeight * 0.02, // 2% de la altura
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    height: screenHeight * 0.08,
+                  ), // 8% de la altura (distancia al borde inferior)
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

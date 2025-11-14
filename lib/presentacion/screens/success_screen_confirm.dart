@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:app/core/constants/app_colors.dart';
 
 class SuccessScanConfirm extends StatelessWidget {
-  const SuccessScanConfirm({super.key});
+  final Map<String, dynamic> datosFactura; //  Recibe datos del OCR
+
+  const SuccessScanConfirm({super.key, required this.datosFactura});
 
   @override
   Widget build(BuildContext context) {
@@ -43,19 +45,15 @@ class SuccessScanConfirm extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           children: [
-            const SizedBox(height: 81), // Subimos todo el bloque
-            // Ícono azul grande
+            const SizedBox(height: 81),
             Center(
               child: Image.asset(
                 'assets/images/chulito 1.png',
                 width: 300,
-                // height: 220,
                 fit: BoxFit.contain,
               ),
             ),
-
-            const SizedBox(height: 24), //menos espacio debajo del ícono
-            // Texto principal
+            const SizedBox(height: 24),
             const Text(
               "Factura escaneada",
               style: TextStyle(
@@ -65,9 +63,7 @@ class SuccessScanConfirm extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-
             const SizedBox(height: 6),
-            // Subtítulo
             const Text(
               "La información fue capturada con éxito.",
               style: TextStyle(
@@ -77,10 +73,7 @@ class SuccessScanConfirm extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-
             const Spacer(),
-
-            // Botón principal
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -89,7 +82,8 @@ class SuccessScanConfirm extends StatelessWidget {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const FacturaConfirmScreen(),
+                      builder: (context) =>
+                          FacturaConfirmScreen(datosFactura: datosFactura),
                     ),
                   );
                 },

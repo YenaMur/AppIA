@@ -28,206 +28,265 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final h = size.height;
+    final w = size.width;
+
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppValues.paddingLarge),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                AppTexts.registerButton,
-                style: Theme.of(context).textTheme.headlineLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Únete hoy y desbloquea todas las posibilidades.\nEs rápido, fácil y solo te tomará un instante.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 24),
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: w * 0.07),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: h * 0.02),
 
-              // Nombre
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre Completo *',
-                ),
-                validator: Validator.validateName,
-              ),
-              const SizedBox(height: 16),
-
-              // Email
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email *'),
-                validator: Validator.validateEmail,
-              ),
-              const SizedBox(height: 16),
-
-              // Contraseña
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Contraseña *',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: AppColors.textHint,
-                    ),
-                    onPressed: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
-                    },
+                // Título principal
+                Text(
+                  AppTexts.registerButton,
+                  style: TextStyle(
+                    fontSize: w * 0.08,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                obscureText: _obscurePassword,
-                validator: Validator.validatePassword,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                AppTexts.hintPassword,
-                style: TextStyle(color: AppColors.textHint, fontSize: 12),
-              ),
-              const SizedBox(height: 16),
+                SizedBox(height: h * 0.008),
 
-              // Confirmar Contraseña
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'Confirmar contraseña *',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: AppColors.textHint,
-                    ),
-                    onPressed: () {
-                      setState(
-                        () =>
-                            _obscureConfirmPassword = !_obscureConfirmPassword,
-                      );
-                    },
+                Text(
+                  'Únete hoy y desbloquea todas las posibilidades.\nEs rápido, fácil y solo te tomará un instante.',
+                  style: TextStyle(
+                    fontSize: w * 0.035,
+                    color: AppColors.textSecondary,
                   ),
                 ),
-                obscureText: _obscureConfirmPassword,
-                validator: (value) {
-                  if (value != _passwordController.text) {
-                    return AppTexts.errorPasswordMatch;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+                SizedBox(height: h * 0.03),
 
-              // Celular
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Celular'),
-                validator: (value) =>
-                    Validator.validateNotEmpty(value, 'celular'),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
-
-              // Checkbox Términos
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Checkbox(
-                    value: _acceptTerms,
-                    onChanged: (value) =>
-                        setState(() => _acceptTerms = value ?? false),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  Expanded(
-                    child: RichText(
-                      text: TextSpan(
-                        text: 'Al crear una cuenta, aceptas nuestros ',
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
+                // Formulario
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      // Nombre
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Nombre Completo *',
+                          border: OutlineInputBorder(),
                         ),
-                        children: [
-                          TextSpan(
-                            text: 'Términos y Condiciones',
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
+                        validator: Validator.validateName,
+                      ),
+                      SizedBox(height: h * 0.018),
+
+                      // Email
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: const InputDecoration(
+                          labelText: 'Correo electrónico *',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: Validator.validateEmail,
+                      ),
+                      SizedBox(height: h * 0.018),
+
+                      // Contraseña
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          labelText: 'Contraseña *',
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: AppColors.textHint,
                             ),
-                            recognizer: TapGestureRecognizer()..onTap = () {},
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
                           ),
-                          const TextSpan(text: ' y nuestro '),
-                          TextSpan(
-                            text: 'Aviso de Privacidad.',
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
+                        ),
+                        validator: Validator.validatePassword,
+                      ),
+                      SizedBox(height: h * 0.01),
+
+                      Text(
+                        AppTexts.hintPassword,
+                        style: TextStyle(
+                          fontSize: w * 0.03,
+                          color: AppColors.textHint,
+                        ),
+                      ),
+                      SizedBox(height: h * 0.018),
+
+                      // Confirmar contraseña
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscureConfirmPassword,
+                        decoration: InputDecoration(
+                          labelText: 'Confirmar Contraseña *',
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirmPassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: AppColors.textHint,
                             ),
-                            recognizer: TapGestureRecognizer()..onTap = () {},
+                            onPressed: () => setState(
+                              () => _obscureConfirmPassword =
+                                  !_obscureConfirmPassword,
+                            ),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value != _passwordController.text) {
+                            return AppTexts.errorPasswordMatch;
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: h * 0.018),
+
+                      // Celular
+                      TextFormField(
+                        controller: _phoneController,
+                        decoration: const InputDecoration(
+                          labelText: 'Número de celular',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.phone,
+                        validator: (value) =>
+                            Validator.validateNotEmpty(value, 'celular'),
+                      ),
+                      SizedBox(height: h * 0.018),
+
+                      // Términos y condiciones
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Checkbox(
+                            value: _acceptTerms,
+                            onChanged: (val) =>
+                                setState(() => _acceptTerms = val ?? false),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          Expanded(
+                            child: RichText(
+                              text: TextSpan(
+                                text: 'Al crear una cuenta, aceptas nuestros ',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: w * 0.032,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: 'Términos y Condiciones',
+                                    style: const TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () {},
+                                  ),
+                                  const TextSpan(text: ' y nuestro '),
+                                  TextSpan(
+                                    text: 'Aviso de Privacidad.',
+                                    style: const TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () {},
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                      SizedBox(height: h * 0.03),
 
-              // Botón crear cuenta
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate() && _acceptTerms) {
-                    Navigator.pushNamed(context, AppRutas.verify);
-                  } else if (!_acceptTerms) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Debes aceptar los Términos y Condiciones.',
+                      // Botón Crear cuenta
+                      SizedBox(
+                        width: double.infinity,
+                        height: h * 0.065,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (_formKey.currentState!.validate() &&
+                                _acceptTerms) {
+                              Navigator.pushNamed(context, AppRutas.verify);
+                            } else if (!_acceptTerms) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Debes aceptar los Términos y Condiciones.',
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(h * 0.015),
+                            ),
+                            backgroundColor: AppColors.primary,
+                            textStyle: TextStyle(
+                              fontSize: w * 0.045,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          child: const Text(AppTexts.registerButton),
                         ),
                       ),
-                    );
-                  }
-                },
-                child: const Text(AppTexts.registerButton),
-              ),
+                      SizedBox(height: h * 0.025),
 
-              const SizedBox(height: 24),
-
-              // Ya tienes cuenta
-              Center(
-                child: RichText(
-                  text: TextSpan(
-                    text: '${AppTexts.alreadyHaveAccount} ',
-                    style: const TextStyle(color: AppColors.textSecondary),
-                    children: [
-                      TextSpan(
-                        text: AppTexts.loginButton,
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
+                      // Ya tienes cuenta
+                      Center(
+                        child: RichText(
+                          text: TextSpan(
+                            text: '${AppTexts.alreadyHaveAccount} ',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: w * 0.035,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: AppTexts.loginButton,
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () => Navigator.pushNamed(
+                                    context,
+                                    AppRutas.login,
+                                  ),
+                              ),
+                            ],
+                          ),
                         ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () =>
-                              Navigator.pushNamed(context, AppRutas.login),
                       ),
+                      SizedBox(height: h * 0.05),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

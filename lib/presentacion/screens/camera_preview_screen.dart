@@ -1,162 +1,209 @@
-import 'package:app/presentacion/screens/scan_alert_screen.dart';
-import 'package:app/presentacion/screens/success_screen_confirm.dart';
+import 'dart:io';
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_texts.dart';
-import '../../core/utils/nav_helper.dart';
+import 'package:app/core/constants/app_colors.dart';
+import 'package:app/core/constants/app_texts.dart';
+import 'package:app/core/services/ocr_service.dart';
+import 'package:app/presentacion/screens/factura_confirm_screen.dart';
 
-class CameraPreviewScreen extends StatelessWidget {
+class CameraPreviewScreen extends StatefulWidget {
   const CameraPreviewScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      extendBodyBehindAppBar: true, // Permite que el body ocupe todo el fondo
-      appBar: AppBar(
-        backgroundColor: Colors.transparent, // AppBar invisible
-        elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16, top: 8), // posición exacta
-          child: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_rounded,
-              color: Colors.white,
-              size: 32,
-            ),
-            onPressed: () {
-              NavHelper.navigateAndReplace(context, const ScanAlertScreen());
-            },
-          ),
+  State<CameraPreviewScreen> createState() => _CameraPreviewScreenState();
+}
+
+class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
+  CameraController? _controller;
+  bool _isCameraInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initCamera();
+  }
+
+  Future<void> _initCamera() async {
+    final cameras = await availableCameras();
+    final backCamera = cameras.firstWhere(
+      (camera) => camera.lensDirection == CameraLensDirection.back,
+    );
+
+    _controller = CameraController(
+      backCamera,
+      ResolutionPreset.medium,
+      enableAudio: false,
+    );
+
+    await _controller!.initialize();
+    if (!mounted) return;
+    setState(() => _isCameraInitialized = true);
+  }
+
+  Future<void> _takePicture(BuildContext context) async {
+    if (!_controller!.value.isInitialized) return;
+
+    try {
+      final file = await _controller!.takePicture();
+      final ocrService = OCRService();
+
+      // Loader
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final datos = await ocrService.procesarImagen(File(file.path));
+      Navigator.pop(context);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FacturaConfirmScreen(datosFactura: datos),
         ),
-      ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error al tomar foto: $e")));
+    }
+  }
 
-      body: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Fondo de cámara (temporal: color o imagen)
-          Positioned.fill(
-            child: Container(
-              color: Colors.pinkAccent.shade100, // reemplazar por cámara
-            ),
-          ),
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
 
-          // Marco guía blanco
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(48, 150, 48, 280),
-              child: CustomPaint(painter: FramePainter()),
-            ),
-          ),
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final scaleFactor = screenHeight < 700
+        ? 0.9
+        : (screenHeight > 900 ? 1.2 : 1.05);
 
-          // Instrucciones
-          Positioned(
-            bottom: 220,
-            left: 48,
-            right: 48,
-            child: Column(
-              children: const [
-                Text(
-                  AppTexts.cameraTitle,
-                  style: TextStyle(
-                    color: AppColors.secondary,
-                    fontSize: 24,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w700,
-                  ),
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          alignment: Alignment.center,
+          children: [
+            // ===== CÁMARA =====
+            if (_isCameraInitialized)
+              Positioned.fill(
+                child: AspectRatio(
+                  aspectRatio: _controller!.value.aspectRatio,
+                  child: CameraPreview(_controller!),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  AppTexts.cameraSubtitle,
-                  textAlign: TextAlign.center,
-                  softWrap: true,
-                  overflow: TextOverflow.visible,
-                  style: TextStyle(
-                    color: AppColors.secondary,
-                    fontFamily: 'Roboto',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    height: 1.3,
-                  ),
+              )
+            else
+              const Center(child: CircularProgressIndicator()),
+
+            // ===== MARCO (Overlay de referencia) =====
+            Positioned.fill(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  screenWidth * 0.12,
+                  screenHeight * 0.18,
+                  screenWidth * 0.12,
+                  screenHeight * 0.35,
                 ),
-              ],
+                child: CustomPaint(
+                  painter: FramePainter(screenWidth, scaleFactor),
+                ),
+              ),
             ),
-          ),
 
-          // Botones inferiores
-          Positioned(
-            bottom: 72,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Reintentar
-                IconButton(
-                  icon: const Icon(
-                    Icons.cameraswitch_rounded,
-                    color: Colors.white,
-                    size: 48,
-                  ),
-                  onPressed: () {},
-                ),
-                const SizedBox(width: 40),
-
-                // Tomar foto
-                Container(
-                  width: 68,
-                  height: 68,
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.check_rounded,
-                      color: Colors.white,
-                      size: 48,
+            // ===== INSTRUCCIONES =====
+            Positioned(
+              bottom: screenHeight * 0.25,
+              left: screenWidth * 0.08,
+              right: screenWidth * 0.08,
+              child: Column(
+                children: [
+                  Text(
+                    AppTexts.cameraTitle,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.secondary,
+                      fontSize: (screenHeight * 0.017) * scaleFactor,
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w700,
                     ),
-                    onPressed: () {
-                      NavHelper.navigateTo(context, SuccessScanConfirm());
-                    },
                   ),
-                ),
-                const SizedBox(width: 40),
-
-                // Flash
-                IconButton(
-                  icon: const Icon(
-                    Icons.flash_auto_rounded,
-                    color: Colors.white,
-                    size: 40,
+                  SizedBox(height: screenHeight * 0.012),
+                  Text(
+                    AppTexts.cameraSubtitle,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.secondary,
+                      fontFamily: 'Inter',
+                      fontSize: (screenHeight * 0.015) * scaleFactor,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+
+            // ===== BOTÓN DE CAPTURA =====
+            Positioned(
+              bottom: screenHeight * 0.08,
+              child: Container(
+                width: (screenHeight * 0.08) * scaleFactor,
+                height: (screenHeight * 0.08) * scaleFactor,
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blueAccent.withOpacity(0.5),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.camera_alt_rounded,
+                    color: Colors.white,
+                    size: (screenHeight * 0.045) * scaleFactor,
+                  ),
+                  onPressed: () => _takePicture(context),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-//  Dibuja las esquinas blancas del marco
+// ===== MARCO (Esquinas del recuadro de captura) =====
 class FramePainter extends CustomPainter {
+  final double screenWidth;
+  final double scaleFactor;
+
+  FramePainter(this.screenWidth, this.scaleFactor);
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = Colors.white
-      ..strokeWidth = 3
+      ..strokeWidth = (screenWidth * 0.007) * scaleFactor
       ..style = PaintingStyle.stroke;
 
-    const double corner = 38;
+    final corner = (screenWidth * 0.1) * scaleFactor;
 
-    // Esquinas — arriba izquierda
+    // Esquinas del marco (líneas)
+    // superior izquierda
     canvas.drawLine(Offset(0, 0), Offset(corner, 0), paint);
     canvas.drawLine(Offset(0, 0), Offset(0, corner), paint);
 
-    // arriba derecha
+    // superior derecha
     canvas.drawLine(
       Offset(size.width, 0),
       Offset(size.width - corner, 0),
@@ -164,7 +211,7 @@ class FramePainter extends CustomPainter {
     );
     canvas.drawLine(Offset(size.width, 0), Offset(size.width, corner), paint);
 
-    // abajo izquierda
+    // inferior izquierda
     canvas.drawLine(
       Offset(0, size.height),
       Offset(0, size.height - corner),
@@ -172,7 +219,7 @@ class FramePainter extends CustomPainter {
     );
     canvas.drawLine(Offset(0, size.height), Offset(corner, size.height), paint);
 
-    // abajo derecha
+    // inferior derecha
     canvas.drawLine(
       Offset(size.width, size.height),
       Offset(size.width - corner, size.height),

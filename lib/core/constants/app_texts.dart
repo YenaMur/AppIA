@@ -8,8 +8,8 @@ class AppTexts {
   static const String loginSubtitle = 'Inicia sesión con tu cuenta registrada';
 
   // Campos
-  static const String email = 'Correo electrónico';
-  static const String phone = 'Número de teléfono';
+  static const String email = 'Correo';
+  static const String phone = 'Celular';
   static const String password = 'Contraseña';
   static const String forgotPassword = '¿Olvidaste la contraseña?';
   static const String hintPassword =

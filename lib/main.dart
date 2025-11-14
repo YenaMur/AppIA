@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/theme/app_theme.dart';
 import 'core/rutas/app_rutas.dart';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -18,12 +18,17 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'ContaIA',
-      theme: AppTheme.lightTheme,
-      initialRoute: AppRutas.splash,
-      routes: AppRutas.rutas,
+    return ScreenUtilInit(
+      designSize: const Size(1080, 2050), // 📏 Relación aprox 19:6
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (context, child) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'ContaIA',
+        theme: AppTheme.lightTheme,
+        initialRoute: AppRutas.splash,
+        routes: AppRutas.rutas,
+      ),
     );
   }
 }

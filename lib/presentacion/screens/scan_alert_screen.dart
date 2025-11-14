@@ -10,115 +10,154 @@ class ScanAlertScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Factor de escala adaptativo
+    final scaleFactor = screenHeight < 700
+        ? 0.9
+        : (screenHeight > 900 ? 1.2 : 1.05);
+
+    return SafeArea(
+      child: Scaffold(
         backgroundColor: AppColors.background,
-        elevation: 0,
-        toolbarHeight: 72,
-        leadingWidth: 72,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 24, top: 24), // margen exacto
-          child: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_rounded,
-              color: AppColors.textPrimary,
+
+        // ===== APPBAR =====
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(screenHeight * 0.09),
+          child: AppBar(
+            backgroundColor: AppColors.background,
+            elevation: 0,
+            leadingWidth: screenWidth * 0.18,
+            leading: Padding(
+              padding: EdgeInsets.only(
+                left: screenWidth * 0.045,
+                top: screenHeight * 0.01,
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppColors.textPrimary,
+                  size: (screenHeight * 0.032) * scaleFactor,
+                ),
+                onPressed: () {
+                  NavHelper.navigateAndReplace(context, const HomeScreen());
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
             ),
-            onPressed: () {
-              NavHelper.navigateAndReplace(context, const HomeScreen());
-            },
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
           ),
         ),
-      ),
 
-      // ===== BODY =====
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, // alinea a la izquierda
-          children: [
-            // Título principal
-            const Text(
-              "Escanea tu factura",
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+        // ===== BODY =====
+        body: Padding(
+          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.065),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: screenHeight * 0.01),
+
+              // ===== TÍTULO PRINCIPAL =====
+              Text(
+                "Escanea tu factura",
+                style: TextStyle(
+                  fontSize: (screenHeight * 0.034) * scaleFactor,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                  fontFamily: 'Inter',
+                  height: 1.2,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
+              SizedBox(height: screenHeight * 0.01),
 
-            // Subtítulo
-            const Text(
-              "Escanea tu factura y deja que ContaIA clasifique\nla información por ti.",
-              textAlign: TextAlign.left, // texto alineado a la izquierda
-              style: TextStyle(
-                fontSize: 11,
-                color: AppColors.textHint,
-                height: 1.4,
+              // ===== SUBTÍTULO =====
+              Text(
+                "Escanea tu factura y deja que ContaIA clasifique la información por ti.",
+                textAlign: TextAlign.left,
+                style: TextStyle(
+                  fontSize: (screenHeight * 0.016) * scaleFactor,
+                  color: AppColors.textHint,
+                  height: 1.4,
+                  fontFamily: 'Inter',
+                ),
               ),
-            ),
 
-            const Spacer(),
+              const Spacer(),
 
-            // Ícono de cámara dentro del círculo
-            Center(
-              child: SizedBox(
-                width: 600,
-                height: 600,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: const [
-                    // Círculo de fondo
-                    Image(
-                      image: AssetImage(
-                        'assets/images/fluent_scan-camera-48-regular.png',
+              // ===== ÍCONO CENTRAL =====
+              Center(
+                child: SizedBox(
+                  width: screenWidth * 0.7,
+                  height: screenWidth * 0.7,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Círculo luminoso de fondo
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blueAccent.withOpacity(0.3),
+                              blurRadius: 25,
+                              spreadRadius: 5,
+                            ),
+                          ],
+                        ),
+                        child: Image.asset(
+                          'assets/images/Ellipse 2.png',
+                          width: screenWidth * 0.7,
+                          height: screenWidth * 0.7,
+                          fit: BoxFit.contain,
+                        ),
                       ),
-                      width: 200,
-                      height: 200,
-                      fit: BoxFit.contain,
-                    ),
-                    Image(
-                      image: AssetImage('assets/images/Ellipse 2.png'),
-                      width: 600,
-                      height: 600,
-                      fit: BoxFit.contain,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const Spacer(),
-
-            // Botón principal
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  NavHelper.navigateTo(context, const CameraPreviewScreen());
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  AppTexts.scanButton,
-                  style: TextStyle(
-                    color: AppColors.background,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                      // Ícono del escáner
+                      Image.asset(
+                        'assets/images/fluent_scan-camera-48-regular.png',
+                        width: screenWidth * 0.28,
+                        height: screenWidth * 0.28,
+                        fit: BoxFit.contain,
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 64),
-          ],
+
+              const Spacer(),
+
+              // ===== BOTÓN PRINCIPAL =====
+              SizedBox(
+                width: double.infinity,
+                height: screenHeight * 0.06,
+                child: ElevatedButton(
+                  onPressed: () {
+                    NavHelper.navigateTo(context, const CameraPreviewScreen());
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    shadowColor: Colors.blueAccent.withOpacity(0.4),
+                    elevation: 4,
+                  ),
+                  child: Text(
+                    AppTexts.scanButton,
+                    style: TextStyle(
+                      color: AppColors.background,
+                      fontSize: (screenHeight * 0.018) * scaleFactor,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Inter',
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+              ),
+
+              SizedBox(height: screenHeight * 0.03),
+            ],
+          ),
         ),
       ),
     );
